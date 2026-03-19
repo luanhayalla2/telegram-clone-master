@@ -1,5 +1,12 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
+import { LogBox } from 'react-native';
+
+// Ignorar avisos de depreciaÃ§Ã£o da biblioteca react-native-toast-message na web
+LogBox.ignoreLogs([
+  'shadow* style props are deprecated',
+  'props.pointerEvents is deprecated'
+]);
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';

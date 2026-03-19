@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Alert } from 'react-native';
 import useTheme from '../hooks/useTheme';
 import Avatar from '../components/Avatar';
 import { spacing } from '../theme/spacing';
@@ -40,14 +41,17 @@ export default function CallsScreen() {
   const { colors, isDark } = useTheme();
 
   const renderItem = ({ item }: { item: typeof MOCK_CALLS[0] }) => (
-    <TouchableOpacity style={[styles.callItem, { borderBottomColor: colors.separator }]}>
+    <TouchableOpacity 
+      style={[styles.callItem, { borderBottomColor: colors.separator }]}
+      onPress={() => Alert.alert('Chamada', `Iniciando chamada para ${item.name}...`)}
+    >
       <Avatar name={item.name} size={50} />
       <View style={styles.callDetails}>
         <Text style={[styles.name, { color: item.missed ? '#FF3B30' : colors.textPrimary }]}>
           {item.name}
         </Text>
         <View style={styles.typeRow}>
-          <MaterialCommunityIcons 
+          <MaterialIcons 
             name={item.type === 'incoming' ? 'call-received' : 'call-made'} 
             size={14} 
             color={item.missed ? '#FF3B30' : colors.textSecondary} 
@@ -87,7 +91,10 @@ export default function CallsScreen() {
         }
       />
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]}>
+      <TouchableOpacity 
+        style={[styles.fab, { backgroundColor: colors.primary }]}
+        onPress={() => Alert.alert('Nova Chamada', 'Funcionalidade de nova chamada em breve!')}
+      >
         <MaterialCommunityIcons name="phone-plus" size={24} color="#FFF" />
       </TouchableOpacity>
     </SafeAreaView>
