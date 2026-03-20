@@ -60,13 +60,15 @@ export const signUp = async (email: string, password: string, displayName: strin
     await setChatSession({ token: authRes.token, userId: authRes._id });
     connectChatSocket(authRes._id);
   } catch (error: any) {
+    console.error('[AuthService] Firebase/ChatRegister Erro:', error.code, error.message);
     // Se falhar, desfaz login do Firebase para não deixar o app sem chat
     await clearChatSession();
     disconnectChatSocket();
     await firebaseSignOut(auth);
 
     const msg = error?.message ? String(error.message) : 'Falha ao registrar na Chat API.';
-    throw new Error(`Falha ao conectar no Chat API: ${msg}`);
+    const code = error?.code ? ` (${error.code})` : '';
+    throw new Error(`Falha ao conectar no Chat API: ${msg}${code}`);
   }
 
   return user;
@@ -91,7 +93,6 @@ export const signIn = async (email: string, password: string) => {
   try {
     const authRes = await chatLogin({ username, password });
     console.log('[AuthService] ChatLogin Sucesso:', authRes);
-    console.log('[AuthService] ChatRegister Sucesso:', authRes);
     await setChatSession({ token: authRes.token, userId: authRes._id });
     connectChatSocket(authRes._id);
   } catch (loginError: any) {
@@ -114,7 +115,6 @@ export const signIn = async (email: string, password: string) => {
         foto: user.photoURL || undefined,
       });
 
-      console.log('[AuthService] ChatRegister (auto) Sucesso:', authRes);
       console.log('[AuthService] ChatRegister (auto) Sucesso:', authRes);
       await setChatSession({ token: authRes.token, userId: authRes._id });
       connectChatSocket(authRes._id);

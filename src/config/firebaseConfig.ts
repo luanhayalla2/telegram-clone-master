@@ -4,6 +4,7 @@
 import { Platform } from 'react-native';
 import { initializeApp } from 'firebase/app';
 import {
+  Auth,
   initializeAuth,
   getAuth,
   browserLocalPersistence,
@@ -33,7 +34,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-let auth;
+let auth: Auth;
 try {
   // Tenta obter a instância já inicializada (evita erro auth/already-initialized)
   auth = getAuth(app);
