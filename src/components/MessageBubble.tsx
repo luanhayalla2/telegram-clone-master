@@ -9,6 +9,9 @@ interface MessageBubbleProps {
   isMine: boolean;
   senderName?: string;
   avatar?: string | null;
+  textSize?: number;
+  showNameAndPhoto?: boolean;
+  useShortNames?: boolean;
 }
 
 export default function MessageBubble({ 
@@ -16,7 +19,10 @@ export default function MessageBubble({
   timestamp, 
   isMine, 
   senderName,
-  avatar 
+  avatar,
+  textSize = 16,
+  showNameAndPhoto = true,
+  useShortNames = false
 }: MessageBubbleProps) {
   const { colors } = useTheme();
 
@@ -30,13 +36,13 @@ export default function MessageBubble({
       styles.container,
       isMine ? styles.myMessageContainer : styles.theirMessageContainer
     ]}>
-      {!isMine && (
+      {!isMine && showNameAndPhoto && (
         <View style={styles.content}>
           <Text style={[styles.senderName, { color: colors.primary }]}>
-            {senderName || 'Usuário'}
+            {useShortNames ? (senderName || 'Usuário').split(' ')[0] : (senderName || 'Usuário')}
           </Text>
           <View style={[styles.bubble, { backgroundColor: colors.bubbleTheirs }]}>
-            <Text style={[styles.messageText, { color: colors.textPrimary }]}>
+            <Text style={[styles.messageText, { color: colors.textPrimary, fontSize: textSize }]}>
               {message}
             </Text>
             <Text style={[styles.timestamp, { color: colors.textSecondary }]}>
@@ -48,7 +54,7 @@ export default function MessageBubble({
 
       {isMine && (
         <View style={[styles.bubble, styles.myBubble, { backgroundColor: colors.bubbleMine }]}>
-          <Text style={[styles.messageText, { color: colors.textPrimary }]}>
+          <Text style={[styles.messageText, { color: colors.textPrimary, fontSize: textSize }]}>
             {message}
           </Text>
           <View style={styles.myMessageFooter}>

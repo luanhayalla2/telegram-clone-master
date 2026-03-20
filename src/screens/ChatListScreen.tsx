@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, Alert, Platform, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { spacing } from '../theme/spacing';
 import ChatListItem from '../components/ChatListItem';
 import LoadingSpinner from '../components/LoadingSpinner';
 import useTheme from '../hooks/useTheme';
+import { useSettings } from '../context/SettingsContext';
 import { chatGetConversations } from '../services/chatApi';
 import { getChatSession } from '../services/chatSession';
 import { onReceiveMessage } from '../services/chatSocket';
@@ -18,11 +19,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ChatList'>;
 
 export default function ChatListScreen({ navigation }: Props) {
   const { colors: themeColors } = useTheme();
+  const { chatFolders } = useSettings();
   const insets = useSafeAreaInsets();
   const [conversations, setConversations] = useState<ChatApiConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [selectedFolderId, setSelectedFolderId] = useState('all_chats');
 
   const loadConversations = useCallback(async () => {
     setLoading(true);
@@ -36,7 +39,7 @@ export default function ChatListScreen({ navigation }: Props) {
 
       setMyUserId(session.userId);
       const fetched = await chatGetConversations(session.userId);
-      setConversations(fetched);
+      setConversations(fetched || []);
     } catch (error: any) {
       console.error('Erro ao carregar conversas:', error);
       Alert.alert('Erro', error?.message || 'Não foi possível carregar suas conversas.');
@@ -67,15 +70,32 @@ export default function ChatListScreen({ navigation }: Props) {
   }, [loadConversations]);
 
   const filteredConversations = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
-    if (!normalized) return conversations;
+    let result = conversations;
+    
+    // Filter by Folder
+    if (selectedFolderId !== 'all_chats') {
+      const folder = chatFolders.find(f => f.id === selectedFolderId);
+      if (folder) {
+        result = result.filter(c => {
+          // Simplistic type detection based on participant count
+          const type = c.participants.length > 2 ? 'groups' : 'private';
+          return folder.includedTypes.includes(type);
+        });
+      }
+    }
 
-    return conversations.filter((c) => {
-      const other = getOtherParticipant(c, myUserId);
-      const name = other?.nome || other?.username || '';
-      return name.toLowerCase().includes(normalized);
-    });
-  }, [search, conversations, myUserId]);
+    // Filter by Search
+    const normalized = search.trim().toLowerCase();
+    if (normalized) {
+      result = result.filter((c) => {
+        const other = getOtherParticipant(c, myUserId);
+        const name = other?.nome || other?.username || '';
+        return name.toLowerCase().includes(normalized);
+      });
+    }
+
+    return result;
+  }, [search, conversations, myUserId, selectedFolderId, chatFolders]);
 
   const renderConversation = useCallback(
     ({ item }: { item: ChatApiConversation }) => {
@@ -133,6 +153,35 @@ export default function ChatListScreen({ navigation }: Props) {
             onChangeText={setSearch}
           />
         </View>
+      </View>
+
+      {/* Chat Folders Tabs */}
+      <View style={styles.tabsContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
+          {chatFolders.map((folder) => {
+            const isActive = selectedFolderId === folder.id;
+            return (
+              <TouchableOpacity
+                key={folder.id}
+                onPress={() => setSelectedFolderId(folder.id)}
+                style={[
+                  styles.tab,
+                  isActive && { borderBottomColor: themeColors.primary, borderBottomWidth: 2 }
+                ]}
+              >
+                <Text 
+                  style={[
+                    styles.tabText, 
+                    { color: isActive ? themeColors.primary : themeColors.textSecondary },
+                    isActive && { fontWeight: 'bold' }
+                  ]}
+                >
+                  {folder.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       <FlatList
@@ -194,7 +243,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     padding: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   searchBar: {
     flexDirection: 'row',
@@ -210,6 +259,21 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     height: '100%',
+  },
+  tabsContainer: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#2D2E33',
+  },
+  tabsScroll: {
+    paddingHorizontal: spacing.md,
+  },
+  tab: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginRight: 8,
+  },
+  tabText: {
+    fontSize: 15,
   },
   listContent: {
     paddingVertical: spacing.xs,

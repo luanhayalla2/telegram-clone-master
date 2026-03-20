@@ -1,14 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useTheme from '../hooks/useTheme';
 import SettingRow from '../components/SettingRow';
+import { useSettings } from '../context/SettingsContext';
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
-  const [val1, setVal1] = React.useState(true);
-  const [val2, setVal2] = React.useState(true);
-  const [val3, setVal3] = React.useState(false);
+  const {
+    notificationsPrivate, setNotificationsPrivate,
+    notificationsGroups, setNotificationsGroups,
+    notificationsChannels, setNotificationsChannels,
+    vibrationEnabled, setVibrationEnabled,
+    ringtoneEnabled, setRingtoneEnabled,
+    syncContacts, setSyncContacts,
+    previewEnabled, setPreviewEnabled,
+  } = useSettings();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
@@ -16,25 +23,77 @@ export default function NotificationsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>NOTIFICAÇÕES DE CHATS</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <SettingRow iconName="person" iconBgColor="#007AFF" label="Chats Privados" subtitle="Ativado" onPress={() => {}} />
-            <SettingRow iconName="people" iconBgColor="#34C759" label="Grupos" subtitle="Ativado" onPress={() => {}} />
-            <SettingRow iconName="megaphone" iconBgColor="#AF52DE" label="Canais" subtitle="Ativado" onPress={() => {}} isLast />
+            <SettingRow 
+              iconName="person" 
+              iconBgColor="#007AFF" 
+              label="Chats Privados" 
+              showSwitch
+              switchValue={notificationsPrivate}
+              onSwitchChange={setNotificationsPrivate}
+            />
+            <SettingRow 
+              iconName="people" 
+              iconBgColor="#34C759" 
+              label="Grupos" 
+              showSwitch
+              switchValue={notificationsGroups}
+              onSwitchChange={setNotificationsGroups}
+            />
+            <SettingRow 
+              iconName="megaphone" 
+              iconBgColor="#AF52DE" 
+              label="Canais" 
+              showSwitch
+              switchValue={notificationsChannels}
+              onSwitchChange={setNotificationsChannels}
+              isLast 
+            />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>CHAMADAS</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <SettingRow iconName="call" iconBgColor="#34C759" label="Vibração" subtitle="Padrão" onPress={() => {}} />
-            <SettingRow iconName="musical-notes" iconBgColor="#F7931A" label="Toque" subtitle="Padrão" onPress={() => {}} isLast />
+            <SettingRow 
+              iconName="call" 
+              iconBgColor="#34C759" 
+              label="Vibração" 
+              showSwitch
+              switchValue={vibrationEnabled}
+              onSwitchChange={setVibrationEnabled}
+            />
+            <SettingRow 
+              iconName="musical-notes" 
+              iconBgColor="#F7931A" 
+              label="Toque" 
+              showSwitch
+              switchValue={ringtoneEnabled}
+              onSwitchChange={setRingtoneEnabled}
+              isLast 
+            />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>OUTROS</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <SettingRow iconName="sync" iconBgColor="#64D2FF" label="Sincronizar Contatos" subtitle="Ativado" onPress={() => {}} />
-            <SettingRow iconName="eye" iconBgColor="#5856D6" label="Pré-visualização" subtitle="Ativado" onPress={() => {}} isLast />
+            <SettingRow 
+              iconName="sync" 
+              iconBgColor="#64D2FF" 
+              label="Sincronizar Contatos" 
+              showSwitch
+              switchValue={syncContacts}
+              onSwitchChange={setSyncContacts}
+            />
+            <SettingRow 
+              iconName="eye" 
+              iconBgColor="#5856D6" 
+              label="Pré-visualização" 
+              showSwitch
+              switchValue={previewEnabled}
+              onSwitchChange={setPreviewEnabled}
+              isLast 
+            />
           </View>
         </View>
       </ScrollView>

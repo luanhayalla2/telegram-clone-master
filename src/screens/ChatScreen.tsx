@@ -1,4 +1,4 @@
-﻿import React, { useRef, useCallback, useEffect, useState } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Keyboard, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -14,12 +14,14 @@ import useTheme from '../hooks/useTheme';
 import { chatGetMessages } from '../services/chatApi';
 import { getChatSession } from '../services/chatSession';
 import { onReceiveMessage, sendMessageSocket } from '../services/chatSocket';
+import { useSettings } from '../context/SettingsContext';
 import type { ChatApiMessage, ChatApiUser } from '../types/chatApi';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 export default function ChatScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
+  const { textSize, chatWallpaper, showNameAndPhoto, useShortNames } = useSettings();
   const { conversationId, userId: receiverId, name, avatar } = route.params;
 
   const flatListRef = useRef<FlatList>(null);
@@ -178,6 +180,9 @@ export default function ChatScreen({ navigation, route }: Props) {
           timestamp={timestamp}
           isMine={isMine}
           senderName={senderName}
+          textSize={textSize}
+          showNameAndPhoto={showNameAndPhoto}
+          useShortNames={useShortNames}
         />
       );
     },
@@ -192,7 +197,7 @@ export default function ChatScreen({ navigation, route }: Props) {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundChat }]} edges={['bottom']}>
       {Platform.OS === 'ios' ? (
         <KeyboardAvoidingView behavior="padding" style={styles.flex} keyboardVerticalOffset={headerHeight}>
-          <View style={[styles.chatWallpaper, { backgroundColor: colors.backgroundChat }]} />
+          <View style={[styles.chatWallpaper, { backgroundColor: chatWallpaper || colors.backgroundChat }]} />
 
           <FlatList
             ref={flatListRef}
@@ -216,7 +221,7 @@ export default function ChatScreen({ navigation, route }: Props) {
         </KeyboardAvoidingView>
       ) : (
         <View style={[styles.flex, { paddingBottom: Math.max(0, keyboardHeight) }]}>
-          <View style={[styles.chatWallpaper, { backgroundColor: colors.backgroundChat }]} />
+          <View style={[styles.chatWallpaper, { backgroundColor: chatWallpaper || colors.backgroundChat }]} />
 
           <FlatList
             ref={flatListRef}

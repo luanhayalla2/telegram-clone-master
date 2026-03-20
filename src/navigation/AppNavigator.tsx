@@ -23,6 +23,18 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import PrivacyScreen from '../screens/PrivacyScreen';
 import DataStorageScreen from '../screens/DataStorageScreen';
 import HelpScreen from '../screens/HelpScreen';
+import BlockedUsersScreen from '../screens/BlockedUsersScreen';
+import PrivacyDetailsScreen from '../screens/PrivacyDetailsScreen';
+import StorageUsageScreen from '../screens/StorageUsageScreen';
+import NetworkUsageScreen from '../screens/NetworkUsageScreen';
+import ClearCacheScreen from '../screens/ClearCacheScreen';
+import ChatFoldersScreen from '../screens/ChatFoldersScreen';
+import EditFolderScreen from '../screens/EditFolderScreen';
+import DevicesScreen from '../screens/DevicesScreen';
+import PowerSavingScreen from '../screens/PowerSavingScreen';
+import PremiumScreen from '../screens/PremiumScreen';
+import WalletScreen from '../screens/WalletScreen';
+import BusinessScreen from '../screens/BusinessScreen';
 import FloatingBottomTab from '../components/FloatingBottomTab';
 
 function PlaceholderScreen({ route }: any) {
@@ -99,17 +111,23 @@ export default function AppNavigator() {
         <Stack.Screen name="NewGroup" component={NewGroupScreen} options={{ title: 'Novo Grupo' }} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Editar Perfil' }} />
         <Stack.Screen name="ChatSettings" component={SettingsScreen as any} options={{ title: 'Configuracoes de Chat' }} />
-        <Stack.Screen name="ChatFolders" component={PlaceholderScreen} options={{ title: 'Pastas de Chat' }} />
-        <Stack.Screen name="Devices" component={PlaceholderScreen} options={{ title: 'Dispositivos' }} />
-        <Stack.Screen name="PowerSaving" component={PlaceholderScreen} options={{ title: 'Economia de Energia' }} />
         <Stack.Screen name="Language" component={LanguageScreen} options={{ title: 'Idioma' }} />
-        <Stack.Screen name="Premium" component={PlaceholderScreen} options={{ title: 'Telegram Premium' }} />
-        <Stack.Screen name="Wallet" component={PlaceholderScreen} options={{ title: 'Carteira' }} />
-        <Stack.Screen name="Business" component={PlaceholderScreen} options={{ title: 'Telegram Business' }} />
+        <Stack.Screen name="Premium" component={PremiumScreen} options={{ title: 'Telegram Premium', headerShown: false }} />
+        <Stack.Screen name="Wallet" component={WalletScreen} options={{ title: 'Carteira' }} />
+        <Stack.Screen name="Business" component={BusinessScreen} options={{ title: 'Telegram Business' }} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notificacoes' }} />
         <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ title: 'Privacidade' }} />
         <Stack.Screen name="DataStorage" component={DataStorageScreen} options={{ title: 'Dados e Armazenamento' }} />
         <Stack.Screen name="Help" component={HelpScreen} options={{ title: 'Ajuda' }} />
+        <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ title: 'Úsuarios Bloqueados' }} />
+        <Stack.Screen name="PrivacyDetails" component={PrivacyDetailsScreen} options={({ route }) => ({ title: route.params.title })} />
+        <Stack.Screen name="StorageUsage" component={StorageUsageScreen} options={{ title: 'Uso de Armazenamento' }} />
+        <Stack.Screen name="NetworkUsage" component={NetworkUsageScreen} options={{ title: 'Uso da Rede' }} />
+        <Stack.Screen name="ClearCache" component={ClearCacheScreen} options={{ title: 'Limpar Cache' }} />
+        <Stack.Screen name="ChatFolders" component={ChatFoldersScreen} options={{ title: 'Pastas de Chat' }} />
+        <Stack.Screen name="EditFolder" component={EditFolderScreen} options={({ route }) => ({ title: route.params.folderId ? 'Editar Pasta' : 'Nova Pasta' })} />
+        <Stack.Screen name="Devices" component={DevicesScreen} options={{ title: 'Dispositivos' }} />
+        <Stack.Screen name="PowerSaving" component={PowerSavingScreen} options={{ title: 'Economia de Energia' }} />
       </Stack.Navigator>
 
       <Modal transparent visible={menuVisible} animationType="fade" onRequestClose={() => setMenuVisible(false)}>

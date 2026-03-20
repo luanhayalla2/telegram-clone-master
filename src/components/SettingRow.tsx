@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Switch, Platform } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import useTheme from '../hooks/useTheme';
 
@@ -10,8 +10,11 @@ interface SettingRowProps {
   label: string;
   subtitle?: string;
   rightBadge?: string;
-  onPress: () => void;
+  onPress?: () => void;
   isLast?: boolean;
+  showSwitch?: boolean;
+  switchValue?: boolean;
+  onSwitchChange?: (value: boolean) => void;
 }
 
 export default function SettingRow({
@@ -23,14 +26,18 @@ export default function SettingRow({
   rightBadge,
   onPress,
   isLast = false,
+  showSwitch = false,
+  switchValue = false,
+  onSwitchChange,
 }: SettingRowProps) {
   const { colors } = useTheme();
 
   return (
     <TouchableOpacity 
       style={[styles.container, { backgroundColor: colors.surface }]} 
-      onPress={onPress} 
-      activeOpacity={0.7}
+      onPress={showSwitch ? undefined : onPress} 
+      activeOpacity={showSwitch ? 1 : 0.7}
+      disabled={showSwitch}
     >
       <View style={styles.row}>
         <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}> 
@@ -48,8 +55,20 @@ export default function SettingRow({
             </Text>
           )}
         </View>
-        {rightBadge && <Text style={styles.badgeText}>{rightBadge}</Text>}
-        <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={{ marginLeft: 8 }} />
+        
+        {showSwitch ? (
+          <Switch
+            value={switchValue}
+            onValueChange={onSwitchChange}
+            trackColor={{ false: colors.separator, true: colors.primary }}
+            thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
+          />
+        ) : (
+          <>
+            {rightBadge && <Text style={[styles.badgeText, { color: colors.primary }]}>{rightBadge}</Text>}
+            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={{ marginLeft: 8 }} />
+          </>
+        )}
       </View>
       {!isLast && <View style={[styles.divider, { backgroundColor: colors.separator }]} />}
     </TouchableOpacity>

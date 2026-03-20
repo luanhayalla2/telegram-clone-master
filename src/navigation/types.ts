@@ -33,11 +33,17 @@ export type RootStackParamList = {
   DataStorage: undefined;
   Help: undefined;
   ChatSettings: undefined;
-  ChatFolders: undefined;
   Devices: undefined;
   PowerSaving: undefined;
   Language: undefined;
   Premium: undefined;
   Wallet: undefined;
   Business: undefined;
+  BlockedUsers: undefined;
+  PrivacyDetails: { title: string; settingKey: string; current: string };
+  StorageUsage: undefined;
+  NetworkUsage: undefined;
+  ClearCache: undefined;
+  ChatFolders: undefined;
+  EditFolder: { folderId?: string };
 };
