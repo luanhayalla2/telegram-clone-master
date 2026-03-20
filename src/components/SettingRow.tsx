@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Switch, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Switch, Platform, TextStyle } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import useTheme from '../hooks/useTheme';
 
@@ -8,8 +8,10 @@ interface SettingRowProps {
   iconType?: 'Ionicons' | 'MaterialCommunityIcons';
   iconBgColor: string;
   label: string;
+  labelStyle?: TextStyle;
   subtitle?: string;
   rightBadge?: string;
+  rightText?: string;
   onPress?: () => void;
   isLast?: boolean;
   showSwitch?: boolean;
@@ -22,8 +24,10 @@ export default function SettingRow({
   iconType = 'Ionicons',
   iconBgColor,
   label,
+  labelStyle,
   subtitle,
   rightBadge,
+  rightText,
   onPress,
   isLast = false,
   showSwitch = false,
@@ -48,7 +52,7 @@ export default function SettingRow({
           )}
         </View>
         <View style={styles.content}>
-          <Text style={[styles.label, { color: colors.textPrimary }]}>{label}</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }, labelStyle]}>{label}</Text>
           {subtitle && (
             <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
               {subtitle}
@@ -64,10 +68,11 @@ export default function SettingRow({
             thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
           />
         ) : (
-          <>
+          <View style={styles.rightContainer}>
+            {rightText && <Text style={[styles.rightText, { color: colors.textSecondary }]}>{rightText}</Text>}
             {rightBadge && <Text style={[styles.badgeText, { color: colors.primary }]}>{rightBadge}</Text>}
-            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={{ marginLeft: 8 }} />
-          </>
+            {!rightText && <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={{ marginLeft: 8 }} />}
+          </View>
         )}
       </View>
       {!isLast && <View style={[styles.divider, { backgroundColor: colors.separator }]} />}
@@ -102,6 +107,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 13,
     marginTop: 2,
+  },
+  rightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rightText: {
+    fontSize: 16,
+    marginRight: 4,
   },
   badgeText: {
     color: '#0A84FF',
