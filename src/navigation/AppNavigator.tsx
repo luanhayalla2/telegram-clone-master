@@ -34,7 +34,9 @@ import DevicesScreen from '../screens/DevicesScreen';
 import PowerSavingScreen from '../screens/PowerSavingScreen';
 import PremiumScreen from '../screens/PremiumScreen';
 import WalletScreen from '../screens/WalletScreen';
+import SavedMessagesScreen from '../screens/SavedMessagesScreen';
 import BusinessScreen from '../screens/BusinessScreen';
+
 import FloatingBottomTab from '../components/FloatingBottomTab';
 
 function PlaceholderScreen({ route }: any) {
@@ -98,7 +100,15 @@ export default function AppNavigator() {
           component={TabNavigator}
           options={({ route }) => ({
             title: 'Telegram Clone',
-            headerLeft: () => null,
+            headerLeft: () => (
+              <TouchableOpacity 
+                style={[styles.headerAction, { marginLeft: 12 }]} 
+                activeOpacity={0.75} 
+                onPress={() => setMenuVisible(true)}
+              >
+                <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
+              </TouchableOpacity>
+            ),
             headerRight: () => (
               <View style={styles.headerActions}>
                 {route.params?.showChatActions && (
@@ -110,8 +120,8 @@ export default function AppNavigator() {
                     <Ionicons name="trash-outline" size={20} color={colors.textPrimary} />
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity style={styles.headerAction} activeOpacity={0.75} onPress={() => setMenuVisible(true)}>
-                  <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
+                <TouchableOpacity style={styles.headerAction} activeOpacity={0.75} onPress={() => toggleTheme()}>
+                  <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
               </View>
             ),
@@ -136,6 +146,7 @@ export default function AppNavigator() {
         <Stack.Screen name="NetworkUsage" component={NetworkUsageScreen} options={{ title: 'Uso da Rede' }} />
         <Stack.Screen name="ClearCache" component={ClearCacheScreen} options={{ title: 'Limpar Cache' }} />
         <Stack.Screen name="ChatFolders" component={ChatFoldersScreen} options={{ title: 'Pastas de Chat' }} />
+        <Stack.Screen name="SavedMessages" component={SavedMessagesScreen} />
         <Stack.Screen name="EditFolder" component={EditFolderScreen} options={({ route }) => ({ title: route.params.folderId ? 'Editar Pasta' : 'Nova Pasta' })} />
         <Stack.Screen name="Devices" component={DevicesScreen} options={{ title: 'Dispositivos' }} />
         <Stack.Screen name="PowerSaving" component={PowerSavingScreen} options={{ title: 'Economia de Energia' }} />
@@ -184,7 +195,9 @@ export default function AppNavigator() {
               activeOpacity={0.75}
               onPress={() => {
                 setMenuVisible(false);
-                Alert.alert('Mensagens Salvas', 'Esta opcao sera adicionada em breve.');
+                if (navigationRef.isReady()) {
+                  navigationRef.navigate('SavedMessages');
+                }
               }}
             >
               <Ionicons name="bookmark-outline" size={22} color={colors.textPrimary} />
@@ -196,7 +209,9 @@ export default function AppNavigator() {
               activeOpacity={0.75}
               onPress={() => {
                 setMenuVisible(false);
-                Alert.alert('Carteira', 'Esta opcao sera adicionada em breve.');
+                if (navigationRef.isReady()) {
+                  navigationRef.navigate('Wallet');
+                }
               }}
             >
               <Ionicons name="wallet-outline" size={22} color={colors.textPrimary} />

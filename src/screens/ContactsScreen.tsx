@@ -7,8 +7,9 @@ import { RootStackParamList } from '../navigation/types';
 import Avatar from '../components/Avatar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import useTheme from '../hooks/useTheme';
-import { CometChat } from '@cometchat/chat-sdk-javascript';
+import { CometChat } from '@cometchat/chat-sdk-react-native';
 import useAuth from '../hooks/useAuth';
+import { initCometChat } from '../services/cometChatService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Contacts'>;
 
@@ -35,10 +36,16 @@ export default function ContactsScreen({ navigation }: Props) {
   const loadUsers = async () => {
     setLoading(true);
     try {
+      // Garantir que o CometChat está inicializado
+      await initCometChat();
+      
       const usersRequest = new CometChat.UsersRequestBuilder()
         .setLimit(100)
         .build();
+        
       const fetchedUsers = await usersRequest.fetchNext();
+      console.log('[ContactsScreen] Usuários buscados:', fetchedUsers.length);
+      
       const mapped: CometUser[] = (fetchedUsers as any[])
         .filter((u: any) => u.uid !== myUid?.toLowerCase())
         .map((u: any) => ({
@@ -50,7 +57,7 @@ export default function ContactsScreen({ navigation }: Props) {
       setUsers(mapped);
     } catch (error: any) {
       console.error('Erro ao buscar contatos CometChat:', error);
-      // If SDK not ready, show empty state instead of crash
+      Alert.alert('Erro', 'Não foi possível carregar contatos. Verifique sua conexão.');
       setUsers([]);
     } finally {
       setLoading(false);

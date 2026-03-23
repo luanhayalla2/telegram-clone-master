@@ -17,7 +17,8 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 const getEnv = (key: string) => {
   const value = process.env[key];
   if (!value) {
-    throw new Error(`[Firebase] Variavel de ambiente ausente: ${key}`);
+    console.warn(`[Firebase] Variavel de ambiente ausente: ${key}. O app pode não funcionar corretamente.`);
+    return '';
   }
   return value;
 };
@@ -32,26 +33,45 @@ const firebaseConfig = {
   measurementId: getEnv('EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID'),
 };
 
-const app = initializeApp(firebaseConfig);
+let app: any;
+let auth: any;
+let db: any;
 
-let auth: Auth;
-try {
-  // Tenta obter a instância já inicializada (evita erro auth/already-initialized)
-  auth = getAuth(app);
-} catch (e) {
-  // Se não existir, inicializa com a persistência adequada
-  if (Platform.OS === 'web') {
-    auth = initializeAuth(app, {
-      persistence: browserLocalPersistence,
-    });
-  } else {
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-    });
+if (firebaseConfig.apiKey) {
+  try {
+    app = initializeApp(firebaseConfig);
+    
+    try {
+      auth = getAuth(app);
+    } catch (e) {
+      if (Platform.OS === 'web') {
+        auth = initializeAuth(app, {
+          persistence: browserLocalPersistence,
+        });
+      } else {
+        auth = initializeAuth(app, {
+          persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+        });
+      }
+    }
+    db = getFirestore(app);
+  } catch (error) {
+    console.error('[Firebase] Erro ao inicializar SDK:', error);
   }
+} else {
+  console.warn('[Firebase] SDK não inicializado por falta de chaves. Usando Mocks.');
+  // Mocks básicos para evitar crash em outras partes do app
+  auth = {
+    currentUser: null,
+    onAuthStateChanged: (cb: any) => {
+      cb(null);
+      return () => {};
+    },
+    signOut: async () => {},
+  };
+  db = {};
 }
 
-export { auth };
-export const db = getFirestore(app);
+export { auth, db };
 export default app;
 

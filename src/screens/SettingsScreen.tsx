@@ -8,6 +8,8 @@ import useTheme from '../hooks/useTheme';
 import SettingRow from '../components/SettingRow';
 import MessageBubble from '../components/MessageBubble';
 import { useSettings } from '../context/SettingsContext';
+import { signOut } from '../services/authService';
+import { Platform } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChatSettings'>;
 
@@ -27,6 +29,27 @@ export default function SettingsScreen({ navigation }: Props) {
     showNameAndPhoto, setShowNameAndPhoto,
     useShortNames, setUseShortNames
   } = useSettings();
+
+  const handleLogout = () => {
+    const confirmLogout = () => {
+      signOut();
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('Deseja realmente sair da sua conta?')) {
+        confirmLogout();
+      }
+    } else {
+      Alert.alert(
+        'Sair',
+        'Deseja realmente sair da sua conta?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Sair', style: 'destructive', onPress: confirmLogout },
+        ]
+      );
+    }
+  };
 
   const handleAdjustTextSize = (amount: number) => {
     const newSize = Math.max(12, Math.min(30, textSize + amount));
@@ -190,7 +213,7 @@ export default function SettingsScreen({ navigation }: Props) {
               iconBgColor="#FF3B30" 
               label="Sair da Conta" 
               labelStyle={{ color: '#FF3B30' }} 
-              onPress={() => Alert.alert('Sair', 'Deseja realmente sair da sua conta?', [{text: 'Cancelar'}, {text: 'Sair', style: 'destructive', onPress: () => {}}])} 
+              onPress={handleLogout} 
               isLast
             />
           </View>

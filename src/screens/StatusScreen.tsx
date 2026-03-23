@@ -193,9 +193,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   fabSmall: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     ...Platform.select({
@@ -214,9 +214,9 @@ const styles = StyleSheet.create({
     }),
   },
   fabLarge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     ...Platform.select({

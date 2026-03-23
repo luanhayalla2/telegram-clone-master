@@ -72,6 +72,10 @@ export const signOut = async () => {
  * Retorna um unsubscribe function.
  */
 export const onAuthChange = (callback: (user: User | null) => void) => {
+  // Se for o nosso mock (não tem a propriedade app do SDK real)
+  if (!(auth as any).app && (auth as any).onAuthStateChanged) {
+    return (auth as any).onAuthStateChanged(callback);
+  }
   return onAuthStateChanged(auth, callback);
 };
 

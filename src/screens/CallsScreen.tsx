@@ -72,6 +72,7 @@ export default function CallsScreen() {
       <View style={[styles.header, { borderBottomColor: colors.separator }]}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Chamadas</Text>
         <TouchableOpacity
+          activeOpacity={0.7}
           onPress={() => {
             if (Platform.OS === 'web') {
               window.alert('Nova chamada: Selecione um contato para ligar.');
@@ -80,7 +81,7 @@ export default function CallsScreen() {
             }
           }}
         >
-          <Ionicons name="add-outline" size={28} color={colors.primary} />
+          <Ionicons name="add-outline" size={32} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -101,6 +102,7 @@ export default function CallsScreen() {
 
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
+        activeOpacity={0.8}
         onPress={() => {
           if (Platform.OS === 'web') {
             window.alert('Nova chamada: Selecione um contato para iniciar.');
@@ -109,7 +111,7 @@ export default function CallsScreen() {
           }
         }}
       >
-        <MaterialCommunityIcons name="phone-plus" size={24} color="#FFF" />
+        <MaterialCommunityIcons name="phone-plus" size={30} color="#FFFFFF" />
       </TouchableOpacity>
     </SafeAreaView>
   );

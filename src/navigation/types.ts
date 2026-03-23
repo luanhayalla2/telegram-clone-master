@@ -39,6 +39,7 @@ export type RootStackParamList = {
   Language: undefined;
   Premium: undefined;
   Wallet: undefined;
+  SavedMessages: undefined;
   Business: undefined;
   BlockedUsers: undefined;
   PrivacyDetails: { title: string; settingKey: string; current: string };

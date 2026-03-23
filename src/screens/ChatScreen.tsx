@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Keyboard, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Keyboard, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,26 +11,32 @@ import MessageInput from '../components/MessageInput';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Avatar from '../components/Avatar';
 import useTheme from '../hooks/useTheme';
-import { chatGetMessages } from '../services/chatApi';
-import { getChatSession } from '../services/chatSession';
-import { onReceiveMessage, sendMessageSocket } from '../services/chatSocket';
 import { useSettings } from '../context/SettingsContext';
-import type { ChatApiMessage, ChatApiUser } from '../types/chatApi';
+import { CometChat } from '@cometchat/chat-sdk-react-native';
+import useAuth from '../hooks/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
+
+type MessageType = {
+  id: string;
+  text: string;
+  senderId: string;
+  createdAt: number;
+  isMine: boolean;
+};
 
 export default function ChatScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
   const { textSize, chatWallpaper, showNameAndPhoto, useShortNames } = useSettings();
-  const { conversationId, userId: receiverId, name, avatar } = route.params;
+  const { conversationId, userId: receiverUid, name, avatar } = route.params;
+  const { uid: myUid } = useAuth();
 
   const flatListRef = useRef<FlatList>(null);
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const [myUserId, setMyUserId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatApiMessage[]>([]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [loading, setLoading] = useState(true);
 
   React.useLayoutEffect(() => {
@@ -43,15 +49,37 @@ export default function ChatScreen({ navigation, route }: Props) {
               {name}
             </Text>
             <Text style={[styles.headerStatus, { color: colors.textSecondary }]} numberOfLines={1}>
-              via Chat API
+              online
             </Text>
           </View>
         </View>
       ),
       headerRight: () => (
         <View style={styles.headerActions}>
-          <Ionicons name="call-outline" size={24} color={colors.textPrimary} />
-          <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
+          <TouchableOpacity 
+            style={styles.headerIconButton}
+            onPress={() => {
+              if (Platform.OS === 'web') {
+                window.alert(`Iniciando chamada de voz para ${name}...`);
+              } else {
+                Alert.alert('Chamada', `Deseja ligar para ${name}?`);
+              }
+            }}
+          >
+            <Ionicons name="call-outline" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.headerIconButton}
+            onPress={() => {
+              if (Platform.OS === 'web') {
+                window.alert('Menu da conversa: Opções de limpar chat e silenciar em breve!');
+              } else {
+                Alert.alert('Opções', 'Limpar histórico, Silenciar notificações, etc.');
+              }
+            }}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
         </View>
       ),
       headerStyle: { backgroundColor: colors.background },
@@ -61,181 +89,127 @@ export default function ChatScreen({ navigation, route }: Props) {
   }, [navigation, name, colors.background, colors.textPrimary, colors.textSecondary, avatar]);
 
   useEffect(() => {
-    if (Platform.OS !== 'android') {
-      return;
-    }
-
-    const showSub = Keyboard.addListener('keyboardDidShow', (event) => {
-      setKeyboardHeight(event.endCoordinates?.height ?? 0);
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
+    if (Platform.OS !== 'android') return;
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates?.height ?? 0));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-
-    const load = async () => {
-      setLoading(true);
-      try {
-        const session = await getChatSession();
-        if (!session?.userId) {
-          if (active) {
-            setMyUserId(null);
-            setMessages([]);
-          }
-          return;
-        }
-
-        if (active) {
-          setMyUserId(session.userId);
-        }
-
-        const fetched = await chatGetMessages(conversationId);
-        if (active) {
-          setMessages(fetched);
-        }
-      } catch (error: any) {
-        console.error('Erro ao carregar mensagens:', error);
-        Alert.alert('Erro', error?.message || 'Não foi possível carregar mensagens.');
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
-    load();
-
-    return () => {
-      active = false;
-    };
-  }, [conversationId]);
+  const loadMessages = useCallback(async () => {
+    setLoading(true);
+    try {
+      const messagesRequest = new CometChat.MessagesRequestBuilder()
+        .setUID(receiverUid)
+        .setLimit(50)
+        .build();
+      
+      const fetched = await messagesRequest.fetchPrevious();
+      const mapped: MessageType[] = (fetched as any[]).map(m => ({
+        id: m.id.toString(),
+        text: m.text || (m.data?.text || ''),
+        senderId: m.sender?.uid || '',
+        createdAt: m.sentAt,
+        isMine: m.sender?.uid === myUid?.toLowerCase(),
+      })).filter(m => m.text);
+      
+      setMessages(mapped);
+    } catch (error) {
+      console.error('Erro ao carregar mensagens CometChat:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [receiverUid, myUid]);
 
   useEffect(() => {
-    const unsubscribe = onReceiveMessage((message: any) => {
-      if (!message || message.conversationId !== conversationId) {
-        return;
+    loadMessages();
+    
+    // Listener para mensagens em tempo real
+    const listenerSettings = new CometChat.MessageListener({
+      onTextMessageReceived: (textMessage: any) => {
+        if (textMessage.sender.uid === receiverUid.toLowerCase()) {
+          setMessages(prev => [...prev, {
+            id: textMessage.id.toString(),
+            text: textMessage.text,
+            senderId: textMessage.sender.uid,
+            createdAt: textMessage.sentAt,
+            isMine: false,
+          }]);
+        }
       }
-
-      const normalized: ChatApiMessage = {
-        ...message,
-        // socket pode enviar senderId como string (sem populate)
-        senderId: message.senderId,
-        createdAt: message.createdAt || new Date().toISOString(),
-        updatedAt: message.updatedAt || message.createdAt || new Date().toISOString(),
-      };
-
-      setMessages((prev) => {
-        if (prev.some((m) => m._id === normalized._id)) return prev;
-        return [...prev, normalized];
-      });
     });
-
+    
+    const listenerID = 'CHAT_SCREEN_LISTENER_' + receiverUid;
+    CometChat.addMessageListener(listenerID, listenerSettings);
+    
     return () => {
-      unsubscribe?.();
+      CometChat.removeMessageListener(listenerID);
     };
-  }, [conversationId]);
+  }, [loadMessages, receiverUid]);
 
-  const handleSend = useCallback(
-    async (text: string) => {
-      if (!myUserId) {
-        Alert.alert('Erro', 'Sessão do chat ausente. Faça login novamente.');
-        return;
-      }
-
-      try {
-        sendMessageSocket({
-          conversationId,
-          senderId: myUserId,
-          receiverId,
-          text,
-        });
-      } catch (error: any) {
-        console.error('Erro ao enviar:', error);
-        Alert.alert('Erro', error?.message || 'Não foi possível enviar a mensagem.');
-      }
-    },
-    [conversationId, myUserId, receiverId]
-  );
-
-  const renderMessage = useCallback(
-    ({ item }: { item: ChatApiMessage }) => {
-      const senderId = extractUserId(item.senderId);
-      const isMine = !!myUserId && !!senderId && senderId === myUserId;
-
-      const senderName = !isMine ? extractUserName(item.senderId) || name : undefined;
-      const text = item.text ? String(item.text) : item.mediaUrl ? '[Mídia]' : '';
-      const timestamp = Math.floor(new Date(item.createdAt).getTime() / 1000);
-
-      return (
-        <MessageBubble
-          message={text}
-          timestamp={timestamp}
-          isMine={isMine}
-          senderName={senderName}
-          textSize={textSize}
-          showNameAndPhoto={showNameAndPhoto}
-          useShortNames={useShortNames}
-        />
+  const handleSend = useCallback(async (text: string) => {
+    try {
+      const textMessage = new CometChat.TextMessage(
+        receiverUid,
+        text,
+        CometChat.RECEIVER_TYPE.USER
       );
-    },
-    [myUserId, name]
-  );
+      
+      const sentMessage: any = await CometChat.sendMessage(textMessage);
+      setMessages(prev => [...prev, {
+        id: sentMessage.id.toString(),
+        text: sentMessage.text,
+        senderId: sentMessage.sender.uid,
+        createdAt: sentMessage.sentAt,
+        isMine: true,
+      }]);
+    } catch (error: any) {
+      console.error('Erro ao enviar mensagem CometChat:', error);
+      Alert.alert('Erro', 'Não foi possível enviar a mensagem.');
+    }
+  }, [receiverUid]);
 
-  if (loading) {
-    return <LoadingSpinner message="Carregando mensagens..." />;
-  }
+  const renderMessage = ({ item }: { item: MessageType }) => {
+    return (
+      <MessageBubble
+        message={item.text}
+        timestamp={item.createdAt}
+        isMine={item.isMine}
+        senderName={!item.isMine ? name : undefined}
+        textSize={textSize}
+        showNameAndPhoto={showNameAndPhoto}
+        useShortNames={useShortNames}
+      />
+    );
+  };
+
+  if (loading) return <LoadingSpinner message="Carregando mensagens..." />;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundChat }]} edges={['bottom']}>
-      {Platform.OS === 'ios' ? (
-        <KeyboardAvoidingView behavior="padding" style={styles.flex} keyboardVerticalOffset={headerHeight}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        style={styles.flex}
+        keyboardVerticalOffset={headerHeight}
+      >
+        <View style={[styles.flex, { paddingBottom: Platform.OS === 'android' ? keyboardHeight : 0 }]}>
           <View style={[styles.chatWallpaper, { backgroundColor: chatWallpaper || colors.backgroundChat }]} />
 
           <FlatList
             ref={flatListRef}
             data={messages}
             renderItem={renderMessage}
-            keyExtractor={(item) => item._id}
+            keyExtractor={(item) => item.id}
             style={styles.list}
-            contentContainerStyle={[styles.messagesList, { paddingBottom: spacing.md + insets.bottom }]}
+            contentContainerStyle={[
+              styles.messagesList, 
+              { paddingBottom: spacing.md + (Platform.OS === 'ios' ? 0 : insets.bottom) }
+            ]}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <View style={styles.datePill}>
-                  <Text style={[styles.datePillText, { color: colors.textOnPrimary }]}>Sem mensagens ainda</Text>
-                </View>
-              </View>
-            }
-          />
-
-          <MessageInput onSend={handleSend} />
-        </KeyboardAvoidingView>
-      ) : (
-        <View style={[styles.flex, { paddingBottom: Math.max(0, keyboardHeight) }]}>
-          <View style={[styles.chatWallpaper, { backgroundColor: chatWallpaper || colors.backgroundChat }]} />
-
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={(item) => item._id}
-            style={styles.list}
-            contentContainerStyle={[styles.messagesList, { paddingBottom: spacing.md + insets.bottom }]}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <View style={styles.datePill}>
-                  <Text style={[styles.datePillText, { color: colors.textOnPrimary }]}>Sem mensagens ainda</Text>
+                  <Text style={[styles.datePillText, { color: '#FFF' }]}>Diga "Olá" para {name}!</Text>
                 </View>
               </View>
             }
@@ -243,88 +217,29 @@ export default function ChatScreen({ navigation, route }: Props) {
 
           <MessageInput onSend={handleSend} />
         </View>
-      )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const extractUserId = (value: string | ChatApiUser | any): string | null => {
-  if (!value) return null;
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object' && value._id) return String(value._id);
-  return null;
-};
-
-const extractUserName = (value: string | ChatApiUser | any): string | null => {
-  if (!value) return null;
-  if (typeof value === 'object') {
-    return value.nome || value.username || null;
-  }
-  return null;
-};
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0a0b10',
-  },
-  list: {
-    flex: 1,
-  },
-  flex: {
-    flex: 1,
-  },
-  chatWallpaper: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#090b12',
-  },
-  headerTitleWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: 220,
-  },
-  headerTextWrap: {
-    marginLeft: 10,
-    flex: 1,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    width: 58,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerName: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  headerStatus: {
-    color: '#9ea1aa',
-    fontSize: 13,
-    marginTop: 1,
-  },
+  container: { flex: 1 },
+  flex: { flex: 1 },
+  list: { flex: 1 },
+  chatWallpaper: { ...StyleSheet.absoluteFillObject },
+  headerTitleWrap: { flexDirection: 'row', alignItems: 'center', width: 200 },
+  headerTextWrap: { marginLeft: 10, flex: 1 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 8 },
+  headerIconButton: { padding: 4 },
+  headerName: { fontSize: 17, fontWeight: '700' },
+  headerStatus: { fontSize: 13, marginTop: 1 },
   messagesList: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
     flexGrow: 1,
     justifyContent: 'flex-end',
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingBottom: 16,
-  },
-  datePill: {
-    backgroundColor: 'rgba(80, 83, 92, 0.65)',
-    borderRadius: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-  },
-  datePillText: {
-    color: '#f2f2f2',
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
+  datePill: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 20 },
+  datePillText: { fontSize: 14, fontWeight: '600' },
 });
