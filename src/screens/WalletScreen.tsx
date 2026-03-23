@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,8 +12,23 @@ const TRANSACTIONS = [
   { id: '3', type: 'received', amount: '150.00', from: 'Work Bonus', date: '21 de Março' },
 ];
 
-export default function WalletScreen() {
+export default function WalletScreen({ navigation }: any) {
   const { colors } = useTheme();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity style={{ marginLeft: 4, padding: 4 }} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={28} color={colors.primary} />
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity style={{ marginRight: 12 }} onPress={() => {}}>
+          <Ionicons name="ellipsis-horizontal" size={24} color={colors.primary} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, colors]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>

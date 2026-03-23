@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useTheme from '../hooks/useTheme';
@@ -71,10 +71,30 @@ export default function StatusScreen() {
 
       {/* Floating Action Buttons */}
       <View style={[styles.fabContainer, { bottom: insets.bottom + 85 }]}>
-         <TouchableOpacity style={[styles.fabSmall, { backgroundColor: isDark ? '#2c2c2e' : '#e4e6eb' }]}>
+         <TouchableOpacity
+           style={[styles.fabSmall, { backgroundColor: isDark ? '#2c2c2e' : '#e4e6eb' }]}
+           activeOpacity={0.8}
+           onPress={() => {
+             if (Platform.OS === 'web') {
+               window.alert('Escrever status: Funcionalidade de status em texto será adicionada em breve!');
+             } else {
+               Alert.alert('Escrever Status', 'Adicione um status em texto. Em breve!');
+             }
+           }}
+         >
            <Ionicons name="pencil" size={20} color={colors.textPrimary} />
          </TouchableOpacity>
-         <TouchableOpacity style={[styles.fabLarge, { backgroundColor: colors.primary }]}>
+         <TouchableOpacity
+           style={[styles.fabLarge, { backgroundColor: colors.primary }]}
+           activeOpacity={0.8}
+           onPress={() => {
+             if (Platform.OS === 'web') {
+               window.alert('Câmera: Postar foto/vídeo no status. Funcionalidade disponível no app mobile!');
+             } else {
+               Alert.alert('Câmera', 'Gravar vídeo ou foto para o status.');
+             }
+           }}
+         >
            <Ionicons name="camera" size={26} color="#FFF" />
          </TouchableOpacity>
       </View>

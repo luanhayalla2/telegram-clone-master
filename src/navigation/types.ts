@@ -2,6 +2,7 @@ export type RootStackParamList = {
   // Auth
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
 
   // Flows
   MainFlow: { screen?: string; params?: any };

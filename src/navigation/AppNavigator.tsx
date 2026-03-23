@@ -76,11 +76,22 @@ export default function AppNavigator() {
   return (
     <>
       <Stack.Navigator
-        screenOptions={{
+        screenOptions={({ navigation }) => ({
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.textPrimary,
           headerTitleStyle: { fontWeight: '600' },
-        }}
+          headerLeft: navigation.canGoBack()
+            ? () => (
+                <TouchableOpacity
+                  onPress={() => navigation.goBack()}
+                  style={{ paddingRight: 8, paddingLeft: 4 }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chevron-back" size={28} color={colors.primary} />
+                </TouchableOpacity>
+              )
+            : undefined,
+        })}
       >
         <Stack.Screen
           name="MainTabs"

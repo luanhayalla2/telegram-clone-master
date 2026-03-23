@@ -49,6 +49,7 @@ interface SettingsContextType {
   disableStickersAutoPlay: boolean;
   disableGifsAutoPlay: boolean;
   disableVideoAutoPlay: boolean;
+  disableBackgroundSync: boolean;
   isPremium: boolean;
   isBusiness: boolean;
   toggleTheme: () => void;
@@ -86,6 +87,7 @@ interface SettingsContextType {
   setDisableStickersAutoPlay: (value: boolean) => void;
   setDisableGifsAutoPlay: (value: boolean) => void;
   setDisableVideoAutoPlay: (value: boolean) => void;
+  setDisableBackgroundSync: (value: boolean) => void;
   setIsPremium: (value: boolean) => void;
   setIsBusiness: (value: boolean) => void;
 }
@@ -142,6 +144,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [disableStickersAutoPlay, setDisableStickersAutoPlayState] = useState(false);
   const [disableGifsAutoPlay, setDisableGifsAutoPlayState] = useState(false);
   const [disableVideoAutoPlay, setDisableVideoAutoPlayState] = useState(false);
+  const [disableBackgroundSync, setDisableBackgroundSyncState] = useState(false);
 
   // Premium & Business
   const [isPremium, setIsPremiumState] = useState(false);
@@ -198,6 +201,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const savedPSStickers = await AsyncStorage.getItem('ps_disable_stickers');
       const savedPSGifs = await AsyncStorage.getItem('ps_disable_gifs');
       const savedPSVideos = await AsyncStorage.getItem('ps_disable_videos');
+      const savedPSSync = await AsyncStorage.getItem('ps_disable_sync');
 
       // Premium & Business
       const savedPremium = await AsyncStorage.getItem('is_premium');
@@ -243,6 +247,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       if (savedPSStickers !== null) setDisableStickersAutoPlayState(savedPSStickers === 'true');
       if (savedPSGifs !== null) setDisableGifsAutoPlayState(savedPSGifs === 'true');
       if (savedPSVideos !== null) setDisableVideoAutoPlayState(savedPSVideos === 'true');
+      if (savedPSSync !== null) setDisableBackgroundSyncState(savedPSSync === 'true');
 
       if (savedPremium !== null) setIsPremiumState(savedPremium === 'true');
       if (savedBusiness !== null) setIsBusinessState(savedBusiness === 'true');
@@ -428,6 +433,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('ps_disable_videos', String(value));
   };
 
+  const setDisableBackgroundSync = async (value: boolean) => {
+    setDisableBackgroundSyncState(value);
+    await AsyncStorage.setItem('ps_disable_sync', String(value));
+  };
+
   const setIsPremium = async (value: boolean) => {
     setIsPremiumState(value);
     await AsyncStorage.setItem('is_premium', String(value));
@@ -476,6 +486,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         disableStickersAutoPlay,
         disableGifsAutoPlay,
         disableVideoAutoPlay,
+        disableBackgroundSync,
         isPremium,
         isBusiness,
         toggleTheme,
@@ -513,6 +524,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setDisableStickersAutoPlay,
         setDisableGifsAutoPlay,
         setDisableVideoAutoPlay,
+        setDisableBackgroundSync,
         setIsPremium,
         setIsBusiness,
       }}

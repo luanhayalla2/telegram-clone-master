@@ -71,7 +71,15 @@ export default function CallsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={[styles.header, { borderBottomColor: colors.separator }]}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Chamadas</Text>
-        <TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            if (Platform.OS === 'web') {
+              window.alert('Nova chamada: Selecione um contato para ligar.');
+            } else {
+              Alert.alert('Nova Chamada', 'Selecione um contato para iniciar uma chamada.');
+            }
+          }}
+        >
           <Ionicons name="add-outline" size={28} color={colors.primary} />
         </TouchableOpacity>
       </View>
@@ -91,9 +99,15 @@ export default function CallsScreen() {
         }
       />
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => Alert.alert('Nova Chamada', 'Funcionalidade de nova chamada em breve!')}
+        onPress={() => {
+          if (Platform.OS === 'web') {
+            window.alert('Nova chamada: Selecione um contato para iniciar.');
+          } else {
+            Alert.alert('Nova Chamada', 'Selecione um contato para iniciar uma chamada!');
+          }
+        }}
       >
         <MaterialCommunityIcons name="phone-plus" size={24} color="#FFF" />
       </TouchableOpacity>

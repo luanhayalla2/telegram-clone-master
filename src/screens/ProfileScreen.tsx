@@ -60,7 +60,19 @@ export default function ProfileScreen({ navigation, route }: Props) {
     }, [loadProfile])
   );
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Alert.alert no Expo Web nao mostra botoes - usar confirm do browser
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Deseja realmente sair da conta?');
+      if (!confirmed) return;
+      try {
+        await signOut();
+      } catch (error: any) {
+        window.alert('Erro ao sair: ' + (error.message || 'Tente novamente'));
+      }
+      return;
+    }
+
     Alert.alert('Sair', 'Deseja realmente sair da conta?', [
       { text: 'Cancelar', style: 'cancel' },
       {

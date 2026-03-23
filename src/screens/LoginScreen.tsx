@@ -87,6 +87,14 @@ export default function LoginScreen({ navigation }: Props) {
             <Text style={styles.footerLink}>Cadastre-se</Text>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.forgotButton}
+          onPress={() => navigation.navigate('ForgotPassword')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.forgotText}>Esqueci minha senha</Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -146,6 +154,15 @@ const styles = StyleSheet.create({
     color: colors.textOnPrimary,
     fontSize: 17,
     fontWeight: '600',
+  },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 4,
+  },
+  forgotText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '500',
   },
   footer: {
     flexDirection: 'row',

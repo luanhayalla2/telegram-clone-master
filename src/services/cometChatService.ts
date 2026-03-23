@@ -46,34 +46,37 @@ export const loginCometChat = async (uid: string, name?: string) => {
     throw new Error('UID obrigatorio para login no CometChat');
   }
 
+  const cleanUid = uid.toLowerCase();
+
   const loggedInUser = await CometChat.getLoggedinUser();
-  if (loggedInUser && loggedInUser.getUid() === uid) {
+  if (loggedInUser && loggedInUser.getUid() === cleanUid) {
     return loggedInUser;
   }
 
-  if (loginPromise && loginUidInFlight === uid) {
+  if (loginPromise && loginUidInFlight === cleanUid) {
     return loginPromise;
   }
 
   try {
-    loginUidInFlight = uid;
+    loginUidInFlight = cleanUid;
     loginPromise = (async () => {
-      if (loggedInUser && loggedInUser.getUid() !== uid) {
+      if (loggedInUser && loggedInUser.getUid() !== cleanUid) {
         await CometChat.logout();
       }
 
-      const user = await CometChat.login(uid, COMETCHAT_CONSTANTS.AUTH_KEY);
+      const user = await CometChat.login(cleanUid, COMETCHAT_CONSTANTS.AUTH_KEY);
       console.log('[CometChat] Login sucesso:', user.getName());
       return user;
     })();
 
     return await loginPromise;
   } catch (error: any) {
-    // Se o usuÃ¡rio nÃ£o existe no CometChat mas existe no Firebase (acontece se o app falhou antes)
-    if (error.code === 'ERR_UID_NOT_FOUND' && name) {
-      console.log('[CometChat] UsuÃ¡rio nÃ£o encontrado, tentando criar...');
-      await createCometChatUser(uid, name);
-      return await CometChat.login(uid, COMETCHAT_CONSTANTS.AUTH_KEY);
+    // Se o usuário não existe no CometChat mas existe no Firebase (acontece se o app falhou antes)
+    if (error.code === 'ERR_UID_NOT_FOUND') {
+      console.log('[CometChat] Usuário não encontrado, tentando criar...');
+      const fallbackName = name ? name : 'Usuário';
+      await createCometChatUser(cleanUid, fallbackName);
+      return await CometChat.login(cleanUid, COMETCHAT_CONSTANTS.AUTH_KEY);
     }
     console.error('[CometChat] Erro no login:', error);
     throw error;
@@ -97,14 +100,15 @@ export const isCometChatLoggedIn = async () => {
 
 /**
  * Logout do CometChat.
+ * Nunca lanca erro para nao bloquear o logout do Firebase.
  */
 export const logoutCometChat = async () => {
   try {
     await CometChat.logout();
     console.log('[CometChat] Logout sucesso');
   } catch (error) {
-    console.error('[CometChat] Erro no logout:', error);
-    throw error;
+    // Swallow: se o CometChat nao estava logado, nao e um problema
+    console.warn('[CometChat] Erro no logout (ignorado):', error);
   }
 };
 
@@ -113,7 +117,8 @@ export const logoutCometChat = async () => {
  * Chamar junto com o signUp do Firebase.
  */
 export const createCometChatUser = async (uid: string, name: string) => {
-  const user = new CometChat.User(uid);
+  const cleanUid = uid.toLowerCase();
+  const user = new CometChat.User(cleanUid);
   user.setName(name);
 
   try {
@@ -130,7 +135,8 @@ export const createCometChatUser = async (uid: string, name: string) => {
  * Atualizar perfil do usuÃ¡rio no CometChat.
  */
 export const updateCometChatUser = async (uid: string, name?: string, avatar?: string) => {
-  const user = new CometChat.User(uid);
+  const cleanUid = uid.toLowerCase();
+  const user = new CometChat.User(cleanUid);
   if (name) user.setName(name);
   if (avatar) user.setAvatar(avatar);
 
@@ -215,7 +221,8 @@ export const createGroup = async (
  */
 export const getUser = async (uid: string) => {
   try {
-    const user = await CometChat.getUser(uid);
+    const cleanUid = uid.toLowerCase();
+    const user = await CometChat.getUser(cleanUid);
     return user;
   } catch (error) {
     console.error('[CometChat] Erro ao buscar usuÃ¡rio:', error);

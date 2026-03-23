@@ -14,7 +14,8 @@ export default function PowerSavingScreen() {
     disableAnimations, setDisableAnimations,
     disableStickersAutoPlay, setDisableStickersAutoPlay,
     disableGifsAutoPlay, setDisableGifsAutoPlay,
-    disableVideoAutoPlay, setDisableVideoAutoPlay
+    disableVideoAutoPlay, setDisableVideoAutoPlay,
+    disableBackgroundSync, setDisableBackgroundSync
   } = useSettings();
 
   const handleAdjustThreshold = (amount: number) => {
@@ -109,12 +110,12 @@ export default function PowerSavingScreen() {
               onSwitchChange={setDisableGifsAutoPlay} 
             />
             <SettingRow 
-              iconName="videocam-outline" 
-              iconBgColor="#FF3B30" 
-              label="Vídeos Auto-reproduzir" 
+              iconName="sync-outline" 
+              iconBgColor="#34C759" 
+              label="Sincronização em Segundo Plano" 
               showSwitch 
-              switchValue={disableVideoAutoPlay} 
-              onSwitchChange={setDisableVideoAutoPlay} 
+              switchValue={!disableBackgroundSync} 
+              onSwitchChange={(val) => setDisableBackgroundSync(!val)} 
               isLast
             />
           </View>
