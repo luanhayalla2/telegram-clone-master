@@ -15,6 +15,10 @@ import { useSettings } from '../context/SettingsContext';
 import { CometChat } from '@cometchat/chat-sdk-react-native';
 import useAuth from '../hooks/useAuth';
 import * as ImagePicker from 'expo-image-picker';
+// 3. Sanitização no frontend (Atividade 3)
+import { sanitizeFrontendMessage } from '../utils/sanitizer';
+// Desafio 1: Criptografia básica de mensagens
+import { encryptMessage, decryptMessage } from '../utils/crypto';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -108,9 +112,12 @@ export default function ChatScreen({ navigation, route }: Props) {
       const fetched = await messagesRequest.fetchPrevious();
       const mapped: MessageType[] = (fetched as any[]).map(m => {
         const isImage = m.type === CometChat.MESSAGE_TYPE.IMAGE || m.type === 'image';
+        // Desafio 1: descriptografa mensagens recebidas ao carregar o histórico
+        const rawText = isImage ? '[Imagem]' : (m.text || m.data?.text || '');
+        const displayText = decryptMessage(rawText);
         return {
           id: m.id.toString(),
-          text: isImage ? '[Imagem]' : (m.text || m.data?.text || ''),
+          text: displayText,
           imageUrl: isImage ? (m.data?.url || m.url) : undefined,
           senderId: m.sender?.uid || '',
           createdAt: m.sentAt,
@@ -120,7 +127,9 @@ export default function ChatScreen({ navigation, route }: Props) {
       
       setMessages(mapped);
     } catch (error) {
+      // 5. Tratamento de Erros Melhorado (Atividade 5)
       console.error('Erro ao carregar mensagens CometChat:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as mensagens. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -133,9 +142,11 @@ export default function ChatScreen({ navigation, route }: Props) {
     const listenerSettings = new CometChat.MessageListener({
       onTextMessageReceived: (textMessage: any) => {
         if (textMessage.sender.uid === receiverUid.toLowerCase()) {
+          // Desafio 1: descriptografa mensagem em tempo real
+          const displayText = decryptMessage(textMessage.text || '');
           setMessages(prev => [...prev, {
             id: textMessage.id.toString(),
-            text: textMessage.text,
+            text: displayText,
             senderId: textMessage.sender.uid,
             createdAt: textMessage.sentAt,
             isMine: false,
@@ -166,24 +177,40 @@ export default function ChatScreen({ navigation, route }: Props) {
   }, [loadMessages, receiverUid]);
 
   const handleSend = useCallback(async (text: string) => {
+    // 3. Sanitização: remove scripts/HTML antes de enviar (Atividade 3)
+    const sanitizedText = sanitizeFrontendMessage(text);
+    if (!sanitizedText) return;
+
+    // Desafio 1: Criptografia — mensagem é cifrada antes de ser transmitida
+    const encryptedText = encryptMessage(sanitizedText);
+
     try {
       const textMessage = new CometChat.TextMessage(
         receiverUid,
-        text,
+        encryptedText,
         CometChat.RECEIVER_TYPE.USER
       );
       
       const sentMessage: any = await CometChat.sendMessage(textMessage);
+      // Exibe o texto original (não cifrado) na UI local
       setMessages(prev => [...prev, {
         id: sentMessage.id.toString(),
-        text: sentMessage.text,
+        text: sanitizedText,
         senderId: sentMessage.sender.uid,
         createdAt: sentMessage.sentAt,
         isMine: true,
       }]);
     } catch (error: any) {
+      // 5. Tratamento de Erros Melhorado (Atividade 5)
       console.error('Erro ao enviar mensagem CometChat:', error);
-      Alert.alert('Erro', 'Não foi possível enviar a mensagem.');
+      const isNetworkError = error?.message?.toLowerCase().includes('network') ||
+                             error?.message?.toLowerCase().includes('connection');
+      Alert.alert(
+        'Erro ao enviar',
+        isNetworkError
+          ? 'Sem conexão. Verifique sua internet e tente novamente.'
+          : 'Não foi possível enviar a mensagem. Tente novamente.',
+      );
     }
   }, [receiverUid]);
 
