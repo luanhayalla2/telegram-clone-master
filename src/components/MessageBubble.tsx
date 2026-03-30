@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, Image } from 'react-native';
 import useTheme from '../hooks/useTheme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -12,6 +12,7 @@ interface MessageBubbleProps {
   textSize?: number;
   showNameAndPhoto?: boolean;
   useShortNames?: boolean;
+  imageUrl?: string;
 }
 
 export default function MessageBubble({ 
@@ -22,7 +23,8 @@ export default function MessageBubble({
   avatar,
   textSize = 16,
   showNameAndPhoto = true,
-  useShortNames = false
+  useShortNames = false,
+  imageUrl
 }: MessageBubbleProps) {
   const { colors } = useTheme();
 
@@ -42,9 +44,14 @@ export default function MessageBubble({
             {useShortNames ? (senderName || 'Usuário').split(' ')[0] : (senderName || 'Usuário')}
           </Text>
           <View style={[styles.bubble, { backgroundColor: colors.bubbleTheirs }]}>
-            <Text style={[styles.messageText, { color: colors.textPrimary, fontSize: textSize }]}>
-              {message}
-            </Text>
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.imageAttachment} resizeMode="cover" />
+            ) : null}
+            {(!imageUrl || message !== '[Imagem]') && (
+              <Text style={[styles.messageText, { color: colors.textPrimary, fontSize: textSize }]}>
+                {message}
+              </Text>
+            )}
             <Text style={[styles.timestamp, { color: colors.textSecondary }]}>
               {timeString}
             </Text>
@@ -54,9 +61,14 @@ export default function MessageBubble({
 
       {isMine && (
         <View style={[styles.bubble, styles.myBubble, { backgroundColor: colors.bubbleMine }]}>
-          <Text style={[styles.messageText, { color: colors.textPrimary, fontSize: textSize }]}>
-            {message}
-          </Text>
+          {imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={styles.imageAttachment} resizeMode="cover" />
+          ) : null}
+          {(!imageUrl || message !== '[Imagem]') && (
+            <Text style={[styles.messageText, { color: colors.textPrimary, fontSize: textSize }]}>
+              {message}
+            </Text>
+          )}
           <View style={styles.myMessageFooter}>
             <Text style={[styles.timestamp, { color: colors.textSecondary }]}>
               {timeString}
@@ -129,5 +141,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-end',
     marginTop: 2,
+  },
+  imageAttachment: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+    marginVertical: 4,
   },
 });

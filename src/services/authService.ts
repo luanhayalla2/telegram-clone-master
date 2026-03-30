@@ -9,6 +9,8 @@ import {
 import { auth, db } from '../config/firebaseConfig';
 import { UserProfile } from '../types/user';
 import { createCometChatUser, loginCometChat, logoutCometChat } from './cometChatService';
+import { getFriendlyErrorMessage } from '../utils/errorHelpers';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * Registrar novo usuário com email e senha.
  * Cria o perfil no Firestore e registra na sua Chat API.
@@ -29,8 +31,8 @@ export const signUp = async (email: string, password: string, displayName: strin
     console.error('[AuthService] CometChat Erro no Register:', error);
     await firebaseSignOut(auth);
 
-    const msg = error?.message ? String(error.message) : 'Falha ao registrar.';
-    throw new Error(`Falha no CometChat: ${msg}`);
+    // 5. Tratamento de Erros Melhorado (Atividade 5)
+    throw new Error(getFriendlyErrorMessage(error));
   }
 
   return user;
@@ -41,15 +43,29 @@ export const signUp = async (email: string, password: string, displayName: strin
  * Atualiza status online no Firestore e faz login na sua Chat API.
  */
 export const signIn = async (email: string, password: string) => {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  const user = userCredential.user;
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-  // CometChat login em background - nao bloqueia o login do Firebase
-  loginCometChat(user.uid, user.displayName || undefined)
-    .then(() => console.log('[AuthService] CometChat login sucesso'))
-    .catch((err) => console.warn('[AuthService] CometChat login falhou (nao critico):', err));
+    // Desafio 2: Simulação de Verificação em Duas Etapas (2FA)
+    const is2FAEnabled = await AsyncStorage.getItem(`2fa_enabled_${user.uid}`);
+    if (is2FAEnabled === 'true') {
+      // Em um app real, aqui abriria uma tela de código via SMS/Authenticator
+      console.log('[SECURITY] 2FA solicitado para o usuário:', user.uid);
+      // Jogamos um erro específico que a UI capturaria para mostrar o modal de 2FA
+      throw { code: 'auth/2fa-required', message: '2FA_REQUIRED', user };
+    }
 
-  return user;
+    // CometChat login em background - nao bloqueia o login do Firebase
+    loginCometChat(user.uid, user.displayName || undefined)
+      .then(() => console.log('[AuthService] CometChat login sucesso'))
+      .catch((err) => console.warn('[AuthService] CometChat login falhou (nao critico):', err));
+
+    return user;
+  } catch (error: any) {
+    if (error.code === 'auth/2fa-required') throw error;
+    throw new Error(getFriendlyErrorMessage(error));
+  }
 };
 
 /**
@@ -98,10 +114,7 @@ export const getUserProfile = async (uid: string) => {
  */
 export const updateUserProfile = async (
   uid: string,
-  data: {
-    displayName?: string;
-    photoURL?: string;
-  }
+  data: Partial<UserProfile>
 ) => {
 
   // Atualizar também no Firebase Auth se for displayName ou photoURL

@@ -6,12 +6,13 @@ import { useSettings } from '../context/SettingsContext';
 
 interface MessageInputProps {
   onSend: (text: string) => void;
+  onPickImage?: () => void;
   onTyping?: () => void;
   onStopTyping?: () => void;
   placeholder?: string;
 }
 
-export default function MessageInput({ onSend, onTyping, onStopTyping, placeholder = 'Mensagem' }: MessageInputProps) {
+export default function MessageInput({ onSend, onPickImage, onTyping, onStopTyping, placeholder = 'Mensagem' }: MessageInputProps) {
   const [text, setText] = useState('');
   const { colors } = useTheme();
   const { sendOnEnter } = useSettings();
@@ -69,7 +70,7 @@ export default function MessageInput({ onSend, onTyping, onStopTyping, placehold
             }
           }}
         />
-        <TouchableOpacity activeOpacity={0.7} style={styles.trailingButton}>
+        <TouchableOpacity activeOpacity={0.7} style={styles.trailingButton} onPress={onPickImage}>
           <Ionicons name="attach-outline" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>

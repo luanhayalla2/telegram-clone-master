@@ -6,9 +6,19 @@ import { LogBox } from 'react-native';
 
 // Ignorar avisos de depreciaÃ§Ã£o da biblioteca react-native-toast-message na web
 LogBox.ignoreLogs([
-  'shadow* style props are deprecated',
+  '"shadow*" style props are deprecated',
   'props.pointerEvents is deprecated'
 ]);
+
+// Suprimir warnings na Web (react-native-web não obedece ao LogBox sempre)
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  const msg = args[0];
+  if (typeof msg === 'string' && (msg.includes('"shadow*" style props') || msg.includes('props.pointerEvents is deprecated'))) {
+    return;
+  }
+  originalWarn(...args);
+};
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';

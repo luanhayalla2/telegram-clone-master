@@ -14,6 +14,7 @@ import useTheme from '../hooks/useTheme';
 import { useSettings } from '../context/SettingsContext';
 import { CometChat } from '@cometchat/chat-sdk-react-native';
 import useAuth from '../hooks/useAuth';
+import * as ImagePicker from 'expo-image-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -23,6 +24,7 @@ type MessageType = {
   senderId: string;
   createdAt: number;
   isMine: boolean;
+  imageUrl?: string;
 };
 
 export default function ChatScreen({ navigation, route }: Props) {
@@ -104,13 +106,17 @@ export default function ChatScreen({ navigation, route }: Props) {
         .build();
       
       const fetched = await messagesRequest.fetchPrevious();
-      const mapped: MessageType[] = (fetched as any[]).map(m => ({
-        id: m.id.toString(),
-        text: m.text || (m.data?.text || ''),
-        senderId: m.sender?.uid || '',
-        createdAt: m.sentAt,
-        isMine: m.sender?.uid === myUid?.toLowerCase(),
-      })).filter(m => m.text);
+      const mapped: MessageType[] = (fetched as any[]).map(m => {
+        const isImage = m.type === CometChat.MESSAGE_TYPE.IMAGE || m.type === 'image';
+        return {
+          id: m.id.toString(),
+          text: isImage ? '[Imagem]' : (m.text || m.data?.text || ''),
+          imageUrl: isImage ? (m.data?.url || m.url) : undefined,
+          senderId: m.sender?.uid || '',
+          createdAt: m.sentAt,
+          isMine: m.sender?.uid === myUid?.toLowerCase(),
+        };
+      }).filter(m => m.text || m.imageUrl);
       
       setMessages(mapped);
     } catch (error) {
@@ -132,6 +138,19 @@ export default function ChatScreen({ navigation, route }: Props) {
             text: textMessage.text,
             senderId: textMessage.sender.uid,
             createdAt: textMessage.sentAt,
+            isMine: false,
+          }]);
+        }
+      },
+      onMediaMessageReceived: (mediaMessage: any) => {
+        if (mediaMessage.sender.uid === receiverUid.toLowerCase()) {
+          const isImage = mediaMessage.type === CometChat.MESSAGE_TYPE.IMAGE || mediaMessage.type === 'image';
+          setMessages(prev => [...prev, {
+            id: mediaMessage.id.toString(),
+            text: isImage ? '[Imagem]' : '[Mídia]',
+            imageUrl: isImage ? (mediaMessage.data?.url || mediaMessage.url) : undefined,
+            senderId: mediaMessage.sender.uid,
+            createdAt: mediaMessage.sentAt,
             isMine: false,
           }]);
         }
@@ -168,10 +187,65 @@ export default function ChatScreen({ navigation, route }: Props) {
     }
   }, [receiverUid]);
 
+  const handlePickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Permissão necessária', 'Precisamos da sua permissão para acessar a galeria.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        handleSendMedia(result.assets[0]);
+      }
+    } catch (e) {
+      console.error('Erro ao abrir galeria:', e);
+    }
+  };
+
+  const handleSendMedia = async (fileAsset: ImagePicker.ImagePickerAsset) => {
+    try {
+      const uriParts = fileAsset.uri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      
+      const file = {
+         name: fileAsset.fileName || `image.${fileType}`,
+         type: fileAsset.mimeType || `image/${fileType}`,
+         uri: Platform.OS === 'android' ? fileAsset.uri : fileAsset.uri.replace('file://', ''),
+      };
+      
+      const mediaMessage = new CometChat.MediaMessage(
+        receiverUid,
+        file,
+        CometChat.MESSAGE_TYPE.IMAGE,
+        CometChat.RECEIVER_TYPE.USER
+      );
+      
+      const sentMessage: any = await CometChat.sendMediaMessage(mediaMessage);
+      setMessages(prev => [...prev, {
+        id: sentMessage.id.toString(),
+        text: '[Imagem]',
+        imageUrl: sentMessage.url || sentMessage.data?.url,
+        senderId: sentMessage.sender.uid,
+        createdAt: sentMessage.sentAt,
+        isMine: true,
+      }]);
+    } catch (error) {
+       console.error('Erro ao enviar mídia:', error);
+       Alert.alert('Erro', 'Não foi possível enviar a imagem.');
+    }
+  };
+
   const renderMessage = ({ item }: { item: MessageType }) => {
     return (
       <MessageBubble
         message={item.text}
+        imageUrl={item.imageUrl}
         timestamp={item.createdAt}
         isMine={item.isMine}
         senderName={!item.isMine ? name : undefined}
@@ -215,7 +289,7 @@ export default function ChatScreen({ navigation, route }: Props) {
             }
           />
 
-          <MessageInput onSend={handleSend} />
+          <MessageInput onSend={handleSend} onPickImage={handlePickImage} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

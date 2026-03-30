@@ -1,4 +1,6 @@
 import { CometChat } from '@cometchat/chat-sdk-react-native';
+import { sanitizeFrontendMessage } from '../utils/sanitizer';
+import { encryptMessage } from '../utils/crypto';
 
 /**
  * Enviar mensagem de texto para um usuário ou grupo.
@@ -8,15 +10,21 @@ export const sendTextMessage = async (
   text: string,
   isGroup = false
 ) => {
+  // 3. Sanitização de Mensagens (Frontend)
+  const safeText = sanitizeFrontendMessage(text);
+  
+  // Desafio 1: Criptografia básica
+  const encryptedText = encryptMessage(safeText);
+
   const receiverType = isGroup
     ? CometChat.RECEIVER_TYPE.GROUP
     : CometChat.RECEIVER_TYPE.USER;
 
-  const textMessage = new CometChat.TextMessage(receiverID, text, receiverType);
+  const textMessage = new CometChat.TextMessage(receiverID, encryptedText, receiverType);
 
   try {
     const sentMessage = await CometChat.sendMessage(textMessage);
-    console.log('[Message] Enviada com sucesso');
+    console.log('[Message] Enviada com sucesso (Sanitizada e Criptografada)');
     return sentMessage;
   } catch (error) {
     console.error('[Message] Erro ao enviar:', error);
